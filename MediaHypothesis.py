@@ -116,22 +116,30 @@ user_input = st.text_input(
 if st.button("Generate hypothesis"):
     text = user_input.strip()
     if text:
-        # Add user message
-        st.session_state.messages.append({"role": "user", "content": text})
+        # Use only the system prompt from session state
+        system_msg = st.session_state.messages[0]
 
-        # Create a copy of messages with extra business context
-        messages_for_api = st.session_state.messages + [
+        # Build a fresh message list for this one query
+        messages = [
+            system_msg,
             {
                 "role": "user",
-                "content": f"The MMM client business vertical is: {business_vertical}. "
-                           f"Please tailor your definitions and hypotheses to this {business_vertical} context.",
-            }
+                "content": (
+                    f"The MMM client business vertical is: {business_vertical}. "
+                    f"The media tactic or pattern is: {text}. "
+                    "Generate the structured media definition and MMM-style hypotheses "
+                    "as per your instructions."
+                ),
+            },
         ]
 
-        # Get assistant response
         try:
-            reply = continue_conversation(messages_for_api)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
+            reply = continue_conversation(messages)
+
+            # Show only the latest result
+            st.markdown("---")
+            st.subheader("Result")
+            st.markdown(reply)
         except Exception as e:
             st.error(f"Error calling OpenAI API: {e}")
 
